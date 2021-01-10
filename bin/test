@@ -1,0 +1,14 @@
+#!/bin/bash
+# set -xe;
+NUMBER_OF_WORKERS=${1:-2}
+echo $NUMBER_OF_WORKERS
+
+clear; clear;
+touch storage/logs/laravel.log && rm storage/logs/laravel.log;
+php artisan migrate:fresh --seed;
+pwd
+for (( c=1; c<=$NUMBER_OF_WORKERS; c++ ))
+do
+   php artisan queue:work --stop-when-empty &
+done
+
