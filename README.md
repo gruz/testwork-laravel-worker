@@ -1,62 +1,106 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+- [Task](#task)
+- [Solution notes](#solution-notes)
+  - [Queue driver problem](#queue-driver-problem)
+- [Installation](#installation)
+  - [Seeder](#seeder)
+  - [Test using `sqlite` queue db connection](#test-using-sqlite-queue-db-connection)
+  - [Test using `redis` (sail docker)](#test-using-redis-sail-docker)
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Task
 
-## About Laravel
+In this exercise, you will write a distributed worker using a database table.
+The worker requests each URL inside the table and stores the resulting response code.
+Make sure you can run several workers in parallel. Each URL may only be requested once.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+**Example table**
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| id  | url                 | status | http_code |
+| --- | ------------------- | ------ | --------- |
+| 1   | https://example.com | DONE   | 200       |
+| 2   | https://reddit.com  | NEW    | null      |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+**Column definition**
 
-## Learning Laravel
+| Column    | Description                                               |
+| --------- | --------------------------------------------------------- |
+| id        | Stores an incrementing identifier for the job             |
+| url       | Stores a common URL                                       |
+| status    | Contains one of the values NEW, PROCESSING, DONE or ERROR |
+| http_code | Stores the resulting HTTP­code from the request.          |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+**Definition of workflow**
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+* Get next available job
+* Call the URL for the job
+* Store the returned status
 
-## Laravel Sponsors
+**Delivery**
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+* Use the language you are applying to.
+* Send us a link to the repository where the code is stored. Preferably Github.
 
-### Premium Partners
+## Solution notes
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/)**
-- **[OP.GG](https://op.gg)**
+### Queue driver problem
 
-## Contributing
+Native laravel queue processing using sqlite queue causes conflicts like
+this while processing queues.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```
+local.ERROR: SQLSTATE[HY000]: General error: 5 database is locked (SQL: update "jobs" set "reserved_at" = 1610315711, "attempts" = 1 where "id" = 14) {"exception":"[object] (Illuminate\\Database\\QueryException(code: HY000): SQLSTATE[HY000]: General error: 5 database is locked (SQL: update \"jobs\" set \"reserved_at\" = 1610315711, \"attempts\" = 1 where \"id\" = 14) at
+```
 
-## Code of Conduct
+A solution is to switch to `redis` for serving queues (or, maybe, latest MySQL, didn't test).
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+I tried using `sail` docker and resdis a and have no such a problem.
+On the other hand, even with the exception throwen, everything works.
 
-## Security Vulnerabilities
+Here is a discuss: [Using `database` queue with several workers](https://github.com/laravel/framework/issues/7046#issuecomment-219724473)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+So to test the solution we can use sqlite database as a lightweight environment but limiting queue workes for 2.
 
-## License
+To avoid this problem, we must start `sail` docker.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Installation
+
+```bash
+git clone git@github.com:gruz/testwork-laravel-worker.git
+cd testwork-laravel-worker
+bin/init
+```
+
+### Seeder
+
+If you check the seeder at the factory, you can see it adds new records to the `links`
+table as well as dispatching several same jobs per record to have several jobs
+trying to update the same record.
+
+### Test using `sqlite` queue db connection
+
+This will run 2 workers
+
+```
+bin/test
+```
+
+![](docs/database.gif)
+
+### Test using `redis` (sail docker)
+
+Change queue connection to redis
+
+```bash
+sed -i "s/QUEUE_CONNECTION=.*/QUEUE_CONNECTION=\"redis\"/" .env
+```
+
+Run docker and login into it
+
+```bash
+./vendor/bin/sail up -d
+./vendor/bin/sail bash
+```
+
+After login to the docker run e.g. `bin/test 4`. `4` will mean 4 workers.
+
+![](docs/redis.gif)
+
