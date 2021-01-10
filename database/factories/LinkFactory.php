@@ -45,9 +45,10 @@ class LinkFactory extends Factory
             'https://nosite03.com/',
             'https://nosite04.com/',
             'https://nosite05.com/',
-            'https://nosite06.com/',
-            'https://nosite07.com/',
-            'https://nosite08.com/',
+            'http://wyzoo.tk/',
+            'https://httpstat.us/202',
+            'https://httpstat.us/403',
+            'https://httpstat.us/410',
         ];
 
         $url = $this->faker->randomElement($urls);
