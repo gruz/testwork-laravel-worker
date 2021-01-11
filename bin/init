@@ -3,8 +3,10 @@
 FILE='.env'
 cp .env.example $FILE
 sed -i "s/DB_CONNECTION=.*/DB_CONNECTION=\"sqlite\"/" $FILE
+sed -i "s/QUEUE_CONNECTION=.*/QUEUE_CONNECTION=\"database\"/" $FILE
 # sed -i "s/QUEUE_CONNECTION=.*/QUEUE_CONNECTION=\"redis\"/" $FILE
 sed -i "s/DB_DATABASE=\(.*\)/# DB_DATABASE=\1/" $FILE
+
 
 touch database/database.sqlite
 
