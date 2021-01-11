@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -xe;
+set -xe;
 NUMBER_OF_WORKERS=${1:-2}
 echo $NUMBER_OF_WORKERS
 
