@@ -11,3 +11,4 @@ sed -i "s/DB_DATABASE=\(.*\)/# DB_DATABASE=\1/" $FILE
 touch database/database.sqlite
 
 composer install
+php artisan migrate:fresh
