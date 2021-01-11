@@ -1,8 +1,8 @@
 - [Task](#task)
 - [Solution notes](#solution-notes)
   - [Queue driver problem](#queue-driver-problem)
-- [Installation](#installation)
   - [Seeder](#seeder)
+- [Installation](#installation)
   - [Test using `sqlite` queue db connection](#test-using-sqlite-queue-db-connection)
   - [Test using `redis` (sail docker)](#test-using-redis-sail-docker)
 
@@ -61,6 +61,12 @@ So to test the solution we can use sqlite database as a lightweight environment 
 
 To avoid this problem, we must start `sail` docker.
 
+### Seeder
+
+If you check the seeder at the factory, you can see it adds new records to the `links`
+table as well as dispatching several same jobs per record to have several jobs
+trying to update the same record.
+
 ## Installation
 
 ```bash
@@ -69,11 +75,7 @@ cd testwork-laravel-worker
 bin/init
 ```
 
-### Seeder
-
-If you check the seeder at the factory, you can see it adds new records to the `links`
-table as well as dispatching several same jobs per record to have several jobs
-trying to update the same record.
+Next open the database `database/database.sqlite` in a DB client to monitor changes.
 
 ### Test using `sqlite` queue db connection
 
